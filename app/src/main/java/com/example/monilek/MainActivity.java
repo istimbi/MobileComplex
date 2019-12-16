@@ -1,5 +1,6 @@
 package com.example.monilek;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -149,9 +150,9 @@ public class MainActivity extends AppCompatActivity {
         chart.start();
 */
 
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "MobileK");
-        /*String dirName = "MobileK";
-        File myDir = new File("sdcard", dirName);*/
+
+        //String dirName = "MobileK";
+        //File myDir = new File("sdcard", dirName);
 
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
                     PackageManager.PERMISSION_GRANTED) {
@@ -163,6 +164,7 @@ public class MainActivity extends AppCompatActivity {
         int code = this.getPackageManager().checkPermission(
                 android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 this.getPackageName());
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "MobileK");
 
         if (code == PackageManager.PERMISSION_GRANTED) {
             if(!file.exists())
@@ -178,13 +180,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+
+
+
         //Request Permission
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
                     PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Get permission", Toast.LENGTH_SHORT).show();
                 ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
             }
         }
 
@@ -267,6 +273,39 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[]
+            permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        switch (requestCode) {
+            case 0:
+                if (grantResults.length > 0 && permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    // check whether storage permission granted or not.
+                    if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "MobileK");
+                        if(!file.exists())
+                            file.mkdirs();
+                        targetFile = new File(file, "EEG.txt");//getFilesDir()
+                        if (!targetFile.exists()) {
+                            try {
+                                targetFile.createNewFile();
+                            } catch (IOException e) {
+                                Toast.makeText(this,e.getLocalizedMessage(),Toast.LENGTH_SHORT).show();
+                                e.printStackTrace();
+
+                            }
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+
     private void init() throws InterruptedException, IOException {
         BluetoothAdapter blueAdapter = BluetoothAdapter.getDefaultAdapter();
         if (blueAdapter != null) {
@@ -283,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
                             try {
                                 socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
                                 socket.connect();
+
                             } catch (IOException e) {
                                 e.printStackTrace();
                                 Toast.makeText(this,"Unable to connect to Mobile Complex. Make sure that you power it up>",Toast.LENGTH_LONG).show();
@@ -381,6 +421,7 @@ public class MainActivity extends AppCompatActivity {
         String str = new String(buffer, "UTF-8");
                 count.setText(bytes);
 
+
     }*/
 
 
@@ -445,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
                 while (!stopStreamBool){
                     try {
 
-                        //Log.e("BufferAvaliable", String.valueOf(inStream.available()));
+                        Log.e("BufferAvaliable", String.valueOf(inStream.available()));
                         if ( buffer == null && inStream.available() > BUFFER_SIZE){
                             buffer = new byte[BUFFER_SIZE];
                             inStream.read(buffer, 0, BUFFER_SIZE );
@@ -496,7 +537,7 @@ public class MainActivity extends AppCompatActivity {
                                         e.printStackTrace();
                                     }
                                     //outStream.write(buffer, 0, BUFFER_SIZE);
-                            FILE_SIZE++;
+                                    FILE_SIZE++;
                                     buffer=null;
 
                               //  }
@@ -635,8 +676,9 @@ private static int Bit24ToInt32(byte[] byteArray)
     @Override
     protected void onDestroy() {
         try {
+            if (socket != null && socket.isConnected()) {
             write(stopStream);
-            socket.close();
+            socket.close();}
         } catch (IOException e) {
             e.printStackTrace();
         }
